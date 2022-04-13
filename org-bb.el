@@ -45,6 +45,25 @@
 (defconst org-bb-blocker-property "BB_BLOCKING")
 (defconst org-bb-blockee-property "BB_BLOCKERS")
 
+(defcustom org-bb-skeleton
+  '(> "#+begin_blockers :from "
+      (concat "\"" (completing-read "Origin state: "
+                                    (mapcar #'car org-todo-kwd-alist)
+                                    nil t nil nil
+                                    (org-get-todo-state))
+              "\"")
+      " :trigger "
+      (concat "\"" (completing-read "Set the state when it is ready: "
+                                    (mapcar #'car org-todo-kwd-alist)
+                                    nil t)
+              "\"")
+      "\n"
+      _
+      "\n#+end_blockers")
+  "Skeleton used in `org-bb-insert-block' command."
+  :group 'org-bb
+  :type 'sexp)
+
 ;;;###autoload
 (define-minor-mode org-bb-mode
   "Turn on blocker block features in `org-mode'."
@@ -141,26 +160,16 @@
 
 ;;;###autoload
 (defun org-bb-insert-block ()
-  "Insert a blockers block."
+  "Insert a blockers block.
+
+To tweak the template to suit your preference, customize
+`org-bb-skeleton' variable."
   (interactive)
   (require 'skeleton)
   (unless (derived-mode-p 'org-mode)
     (user-error "Please run this command in org-mode"))
   (org-bb--set-blockee-property)
-  (skeleton-insert '(> "#+begin_blockers :from "
-                       (concat "\"" (completing-read "Origin state: "
-                                                     (mapcar #'car org-todo-kwd-alist)
-                                                     nil t nil nil
-                                                     (org-get-todo-state))
-                               "\"")
-                       " :trigger "
-                       (concat "\"" (completing-read "Set the state when it is ready: "
-                                                     (mapcar #'car org-todo-kwd-alist)
-                                                     nil t)
-                               "\"")
-                       "\n"
-                       _
-                       "\n#+end_blockers")))
+  (skeleton-insert org-bb-skeleton))
 
 ;;;###autoload
 (defun org-bb-update-block ()
