@@ -42,6 +42,10 @@
 (require 'org)
 (require 'ol)
 
+(defgroup org-bb nil
+  "Manage Org dependencies in blocks."
+  :group 'org)
+
 (defconst org-bb-blocker-property "BB_BLOCKING")
 (defconst org-bb-blockee-property "BB_BLOCKERS")
 
