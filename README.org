@@ -1,0 +1,33 @@
+* org-blockers-block (org-bb.el)
+This package lets you define todo dependencies in =blockers= blocks.
+
+Inside a =blockers= block, you can put ID links to Org entries, and they will
+become the blockers of the entry. You can also put extra information in the
+block to describe why they are blockers.
+** Usage
+Turn on =org-bb-mode=.
+
+In the body of an Org entry that has dependencies, insert a =blocker= block:
+
+#+begin_src org
+  ,#+begin_blockers :from "TODO" :trigger "NEXT"
+  - [ ] [[id:XXXXXXX][HEADING 1]] (id link to a blocking entry)
+  - [ ] [[id:XXXXXXX][HEADING 2]] (id link to another blocking entry)
+  ,#+end_blockers
+#+end_src
+
+You can insert an empty block using =org-bb-insert-block= command.
+
+The block should contain one or more ID links to other Org entries.
+When all of the linked entries are done, the entry containing the block is considered unblocked.
+
+The checkboxes are only for your convenience, and they will be ignored.
+
+By setting =:trigger= property of the block to a todo keyword, you can also
+update the todo state of the entry automatically when all of the dependencies
+are satisfied.
+If you set =:from= property to a todo keyword, the state change is not triggered
+unless the current state matches the keyword.
+** Alternatives
+- org-edna
+- org-depend (part of org-contrib, not actively maintained)
