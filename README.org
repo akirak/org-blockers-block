@@ -32,5 +32,10 @@ are satisfied.
 If you set =:from= property to a todo keyword, the state change is not triggered
 unless the current state matches the keyword.
 ** Alternatives
-- org-edna
-- org-depend (part of org-contrib, not actively maintained)
+At present, there are the following packages/libraries that lets you manage Org dependencies:
+
+- [[https://www.nongnu.org/org-edna-el/][org-edna]]
+- [[https://orgmode.org/worg/org-contrib/org-depend.html][org-depend]] (part of org-contrib, not actively maintained)
+
+=org-bb= is the simplest in functionality.
+It only lets you manage blockers.
