@@ -46,6 +46,8 @@
   "Manage Org dependencies in blocks."
   :group 'org)
 
+(declare-function thing-at-point-looking-at "thingatpt")
+
 (defconst org-bb-blocker-property "BB_BLOCKING")
 (defconst org-bb-blockee-property "BB_BLOCKERS")
 
@@ -111,8 +113,7 @@
 (defun org-bb-trigger (change-plist)
   "Trigger changes according to the blocking property."
   (when (eq 'todo-state-change (plist-get change-plist :type))
-    (let* ((pos (plist-get change-plist :position))
-           (origin-id (org-id-get pos)))
+    (let* ((pos (plist-get change-plist :position)))
       (dolist (target-id (org-entry-get-multivalued-property pos org-bb-blocker-property))
         (if-let (marker (org-id-find target-id 'markerp))
             (org-with-point-at marker
@@ -141,9 +142,10 @@
 (defun org-bb--matched-block ()
   "Return information on the blocked matched by the regexp."
   (when (equal (match-string 1) "blockers")
-    (cons (cons (goto-char (nth 8 match))
-                (nth 9 match))
-          (read (concat "(" (or (match-string 3) "") ")")))))
+    (let ((match (match-data)))
+      (cons (cons (goto-char (nth 8 match))
+                  (nth 9 match))
+            (read (concat "(" (or (match-string 3) "") ")"))))))
 
 (defun org-bb--maybe-blocker (end)
   "Return a link to a blocking entry, if any."
@@ -179,6 +181,7 @@ To tweak the template to suit your preference, customize
 (defun org-bb-update-block ()
   "Update the blockers defined in the block at point."
   (interactive)
+  (require 'thingatpt)
   (save-match-data
     (if (or (org-at-block-p)
             (and (org-in-block-p '("blockers"))
