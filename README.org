@@ -23,6 +23,9 @@ When all of the linked entries are done, the entry containing the block is consi
 
 The checkboxes are only for your convenience, and they will be ignored.
 
+After you add a link to the block, run =org-bb-update-block= command on the block.
+This is necessary to hook triggers on the linked entries.
+
 By setting =:trigger= property of the block to a todo keyword, you can also
 update the todo state of the entry automatically when all of the dependencies
 are satisfied.
