@@ -4,9 +4,15 @@ This package lets you define todo dependencies in =blockers= blocks.
 Inside a =blockers= block, you can put ID links to Org entries, and they will
 become the blockers of the entry. You can also put extra information in the
 block to describe why they are blockers.
-** Usage
-Turn on =org-bb-mode=.
+** Configuration
+Turn on =org-bb-mode=, which is a global minor mode.
+A recommended way is to load it after =org=:
 
+#+begin_src emacs-lisp
+  (with-eval-after-load 'org
+    (org-bb-mode t))
+#+end_src
+** Usage
 In the body of an Org entry that has dependencies, insert a =blocker= block:
 
 #+begin_src org
