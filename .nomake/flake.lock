@@ -1,0 +1,27 @@
+{
+  "nodes": {
+    "org-bb": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1649882957,
+        "narHash": "sha256-SFo4tOjvvNUhUT7gzNAphkwtOjhjp4xgCz1bF52iJmM=",
+        "owner": "akirak",
+        "repo": "org-blockers-block",
+        "rev": "e7cb2671fafbef3d0ce95f425b4de4a5abe6a531",
+        "type": "github"
+      },
+      "original": {
+        "owner": "akirak",
+        "repo": "org-blockers-block",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "org-bb": "org-bb"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
