@@ -77,10 +77,12 @@
   (if org-bb-mode
       (progn
         (add-hook 'org-trigger-hook #'org-bb-trigger)
-        (add-hook 'org-blocker-hook #'org-bb-blocker))
+        (add-hook 'org-blocker-hook #'org-bb-blocker)
+        (add-hook 'org-ctrl-c-ctrl-c-hook #'org-bb-maybe-update))
     (progn
       (remove-hook 'org-trigger-hook #'org-bb-trigger)
-      (remove-hook 'org-blocker-hook #'org-bb-blocker))))
+      (remove-hook 'org-blocker-hook #'org-bb-blocker)
+      (remove-hook 'org-ctrl-c-ctrl-c-hook #'org-bb-maybe-update))))
 
 (defun org-bb-blocker (change-plist)
   "Return t if the change is not blocked."
@@ -178,13 +180,14 @@ To tweak the template to suit your preference, customize
   (skeleton-insert org-bb-skeleton))
 
 ;;;###autoload
-(defun org-bb-update-block ()
+(defun org-bb-update-block (&optional as-hook)
   "Update the blockers defined in the block at point."
   (interactive)
   (require 'thingatpt)
   (save-match-data
     (if (or (org-at-block-p)
-            (and (org-in-block-p '("blockers"))
+            (and (not as-hook)
+                 (org-in-block-p '("blockers"))
                  (thing-at-point-looking-at org-block-regexp)))
         (if (equal (match-string 1) "blockers")
             (let ((end (nth 9 (match-data)))
@@ -202,8 +205,17 @@ To tweak the template to suit your preference, customize
                             (org-entry-add-to-multivalued-property
                              marker org-bb-blocker-property target)
                           (error "Not found: %s" link))))))))
-          (user-error "Not on a \"blockers\" block"))
-      (user-error "Not on a block"))))
+          (unless as-hook
+            (user-error "Not on a \"blockers\" block")))
+      (unless as-hook
+        (user-error "Not on a block")))))
+
+(defun org-bb-maybe-update ()
+  "Update the block at point.
+
+This function is intended for addition to
+`org-ctrl-c-ctrl-c-hook'. See `org-bb-mode'."
+  (org-bb-update-block t))
 
 (defun org-bb--set-blockee-property ()
   (org-entry-put nil org-bb-blockee-property "block"))

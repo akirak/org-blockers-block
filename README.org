@@ -29,7 +29,8 @@ When all of the linked entries are done, the entry containing the block is consi
 
 The checkboxes are only for your convenience, and they will be ignored.
 
-After you add a link to the block, run =org-bb-update-block= command on the block.
+After you add a link to the block, run =org-ctrl-c-ctrl-c= at the line of =#+begin_blockers=.
+Alternatively, you can run =org-bb-update-block= command at anywhere inside the block.
 This is necessary to hook triggers on the linked entries.
 
 By setting =:trigger= property of the block to a todo keyword, you can also
