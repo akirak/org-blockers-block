@@ -118,27 +118,29 @@
     (let* ((pos (plist-get change-plist :position)))
       (dolist (target-id (org-entry-get-multivalued-property pos org-bb-blocker-property))
         (if-let (marker (org-id-find target-id 'markerp))
-            (org-with-point-at marker
-              (let ((entry-end (org-entry-end-position))
-                    (todo (org-get-todo-state)))
-                (when-let (new-todo
-                           (catch 'new-todo
-                             (while (re-search-forward org-block-regexp entry-end t)
-                               (pcase (org-bb--matched-block)
-                                 (`((,begin . ,block-end) . ,plist)
-                                  (when (equal (match-string 1) "blockers")
-                                    (let ((trigger (plist-get plist :trigger)))
-                                      (goto-char begin)
-                                      (when (and trigger
-                                                 (equal (plist-get plist :from)
-                                                        todo)
-                                                 (not (org-bb--maybe-blocker block-end)))
-                                        (throw 'new-todo trigger))
-                                      (goto-char block-end))))))))
-                  (org-todo new-todo)
-                  (message "Set the state of \"%s\" to %s"
-                           (org-link-display-format (org-get-heading t t t t))
-                           new-todo))))
+            (with-current-buffer (marker-buffer marker)
+              (org-with-wide-buffer
+               (goto-char marker)
+               (let ((entry-end (org-entry-end-position))
+                     (todo (org-get-todo-state)))
+                 (when-let (new-todo
+                            (catch 'new-todo
+                              (while (re-search-forward org-block-regexp entry-end t)
+                                (pcase (org-bb--matched-block)
+                                  (`((,begin . ,block-end) . ,plist)
+                                   (when (equal (match-string 1) "blockers")
+                                     (let ((trigger (plist-get plist :trigger)))
+                                       (goto-char begin)
+                                       (when (and trigger
+                                                  (equal (plist-get plist :from)
+                                                         todo)
+                                                  (not (org-bb--maybe-blocker block-end)))
+                                         (throw 'new-todo trigger))
+                                       (goto-char block-end))))))))
+                   (org-todo new-todo)
+                   (message "Set the state of \"%s\" to %s"
+                            (org-link-display-format (org-get-heading t t t t))
+                            new-todo)))))
           (error "ID %s is not found" target-id))))))
 
 (defun org-bb--matched-block ()
@@ -160,9 +162,11 @@
                             href)
           (let ((id (match-string 1 href)))
             (if-let (marker (org-id-find id 'markerp))
-                (org-with-point-at marker
-                  (unless (org-entry-is-done-p)
-                    (throw 'blockers-blocker-link link)))
+                (with-current-buffer (marker-buffer marker)
+                  (org-with-wide-buffer
+                   (goto-char marker)
+                   (unless (org-entry-is-done-p)
+                     (throw 'blockers-blocker-link link))))
               (message (concat "Not found: " link))
               (throw 'blockers-blocker-link link))))))))
 
