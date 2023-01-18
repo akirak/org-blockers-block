@@ -48,16 +48,15 @@
 
 (declare-function thing-at-point-looking-at "thingatpt")
 
-(defconst org-bb-blocker-property "BB_BLOCKING")
-(defconst org-bb-blockee-property "BB_BLOCKERS")
-
 (defcustom org-bb-skeleton
   '(> "#+begin_blockers :from "
-      (concat "\"" (completing-read "Origin state: "
-                                    (mapcar #'car org-todo-kwd-alist)
-                                    nil t nil nil
-                                    (org-get-todo-state))
-              "\"")
+      (let ((kw (completing-read "Origin state: "
+                                 (mapcar #'car org-todo-kwd-alist)
+                                 nil t nil nil
+                                 (org-get-todo-state))))
+        (if (string-empty-p kw)
+            nil
+          (format "\"%s\"" kw)))
       " :trigger "
       (concat "\"" (completing-read "Set the state when it is ready: "
                                     (mapcar #'car org-todo-kwd-alist)
@@ -87,30 +86,28 @@
 (defun org-bb-blocker (change-plist)
   "Return t if the change is not blocked."
   (when (eq 'todo-state-change (plist-get change-plist :type))
-    (let ((pos (plist-get change-plist :position)))
-      (pcase (org-entry-get pos org-bb-blockee-property)
-        (`nil t)
-        ("block"
-         (org-with-point-at pos
-           (let ((entry-end (org-entry-end-position)))
-             (save-match-data
-               (save-excursion
-                 (catch 'blockers-non-blocking
-                   (when (re-search-forward org-block-regexp entry-end t)
-                     (pcase (org-bb--matched-block)
-                       (`((,begin . ,end) . ,plist)
-                        (when (equal (match-string 1) "blockers")
-                          (let* ((from (plist-get plist :from)))
-                            (unless (and from (equal from (plist-get change-plist :to)))
-                              (goto-char begin)
-                              (when-let (link (org-bb--maybe-blocker end))
-                                (setq org-block-entry-blocking link)
-                                (throw 'blockers-non-blocking nil)))
-                            (goto-char end))))))
-                   t))))))
-        (s
-         (message "Invalid BB_BLOCKERS value: %s" s)
-         nil)))))
+    (catch 'blockers-non-blocking
+      (org-with-point-at (plist-get change-plist :position)
+        (let ((bound (org-entry-end-position)))
+          (save-excursion
+            (while (re-search-forward org-block-regexp bound t)
+              (pcase (org-bb--matched-block)
+                ((and `((,begin . ,end) . ,plist)
+                      (guard (not (and (plist-get plist :from)
+                                       (equal (plist-get plist :from)
+                                              (plist-get change-plist :to))))))
+                 (goto-char begin)
+                 (while (< (point) end)
+                   (when (and (org-at-item-checkbox-p)
+                              (not (equal (match-string 1)
+                                          "[X]")))
+                     (setq org-block-entry-blocking
+                           (when (re-search-forward org-link-bracket-re (pos-eol) t)
+                             (match-string 1)))
+                     (throw 'blockers-non-blocking nil))
+                   (forward-line))
+                 (goto-char end)))))))
+      t)))
 
 (defun org-bb-trigger (change-plist)
   "Trigger changes according to the blocking property."
@@ -125,18 +122,17 @@
                      (todo (org-get-todo-state)))
                  (when-let (new-todo
                             (catch 'new-todo
-                              (while (re-search-forward org-block-regexp entry-end t)
-                                (pcase (org-bb--matched-block)
+                              (while (re-search-forward org-block-regexp bound t)
+                                (pcase (org-bb--matched-block entry-end)
                                   (`((,begin . ,block-end) . ,plist)
-                                   (when (equal (match-string 1) "blockers")
-                                     (let ((trigger (plist-get plist :trigger)))
-                                       (goto-char begin)
-                                       (when (and trigger
-                                                  (equal (plist-get plist :from)
-                                                         todo)
-                                                  (not (org-bb--maybe-blocker block-end)))
-                                         (throw 'new-todo trigger))
-                                       (goto-char block-end))))))))
+                                   (let ((trigger (plist-get plist :trigger)))
+                                     (goto-char begin)
+                                     (when (and trigger
+                                                (equal (plist-get plist :from)
+                                                       todo)
+                                                (not (org-bb--maybe-blocker block-end)))
+                                       (throw 'new-todo trigger))
+                                     (goto-char block-end)))))))
                    (org-todo new-todo)
                    (message "Set the state of \"%s\" to %s"
                             (org-link-display-format (org-get-heading t t t t))
@@ -147,9 +143,9 @@
   "Return information on the blocked matched by the regexp."
   (when (equal (match-string 1) "blockers")
     (let ((match (match-data)))
-      (cons (cons (goto-char (nth 8 match))
-                  (nth 9 match))
-            (read (concat "(" (or (match-string 3) "") ")"))))))
+      (throw 'found-bb (cons (cons (goto-char (nth 8 match))
+                                   (nth 9 match))
+                             (read (concat "(" (or (match-string 3) "") ")")))))))
 
 (defun org-bb--maybe-blocker (end)
   "Return a link to a blocking entry, if any."
@@ -196,7 +192,6 @@ To tweak the template to suit your preference, customize
         (if (equal (match-string 1) "blockers")
             (let ((end (nth 9 (match-data)))
                   (target (org-id-get-create)))
-              (org-bb--set-blockee-property)
               (save-excursion
                 (while (re-search-forward org-link-bracket-re end t)
                   (let ((link (match-string 0))
@@ -220,9 +215,6 @@ To tweak the template to suit your preference, customize
 This function is intended for addition to
 `org-ctrl-c-ctrl-c-hook'. See `org-bb-mode'."
   (org-bb-update-block t))
-
-(defun org-bb--set-blockee-property ()
-  (org-entry-put nil org-bb-blockee-property "block"))
 
 (provide 'org-bb)
 ;;; org-bb.el ends here
