@@ -1,4 +1,7 @@
 * org-blockers-block (org-bb.el)
+*Deprecation notice: This repository is deprecated as it turns out to be unnecessary.
+Use =org-enforce-todo-checkbox-dependencies= instead.*
+
 This package lets you define todo dependencies in =blockers= blocks.
 
 Inside a =blockers= block, you can put ID links to Org entries, and they will
